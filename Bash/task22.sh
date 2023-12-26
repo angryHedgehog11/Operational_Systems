@@ -12,14 +12,19 @@ then
   exit 2
 fi
 
+mktemp users.txt
+mktemp ps_otput.txt
+
+ps -e -o user=,pid=,time= > ps_output.txt
+
 USER=$1
-ps -e -o user | sort | uniq -c | sort -nr | tr -s " " | cut -d " " -f3 > users.txt 
+cat ps_output.txt | cut -d " " -f1 | sort | uniq -c | sort -nr | tr -s " " | cut -d " " -f3 > users.txt 
 
 USERS_WITH_MORE_PR=$(sed "/$USER/Q" users.txt)
 
 echo "The following users: $USERS_WITH_MORE_PR are with more processes than $USER"
 
-ALL_PR=$(ps -e | wc -l)
+ALL_PR=$(cat ps_output.txt | wc -l)
 
 TIME_PR=0 
 
@@ -28,7 +33,7 @@ EPOCH='jan 1 1970'
 while read line 
 do 
 	TIME_PR="$(date -u -d "$EPOCH $line" +%s) + $TIME_PR"
-done < <(ps -e -o time=)
+done < <(cat ps_output.txt | cut -d " " -f3)
 
 TIME_PR=$( echo $TIME_PR | bc)
 
@@ -48,5 +53,6 @@ do
 		sleep 1 
 		echo "kill -9 ${PID}" 
 	fi
-done < <(ps -e -o user=,pid=,time= | egrep $USER)
-
+done < <(cat ps_output.txt | egrep $USER)
+rm users.txt
+rm ps_output.txt
