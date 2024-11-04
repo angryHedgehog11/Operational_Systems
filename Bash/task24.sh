@@ -1,23 +1,31 @@
 #!/bin/bash 
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]
+if [ $# -lt 1 ] || [ $# -gt 2 ] 
 then 
 	echo "Wrong number of arguments"
-	exit 1
+	exit 1 
 fi 
 
-if ! [ -d $1 ]
+if ! [ -d $1 ] 
 then 
-	echo "First parameter should be existing directory"
-	exit 2
+	echo "First mandatory argument should be an existing dir"
+	exit 2 
 fi 
 
-DIR=$1 
-
-if [ -z $2 ] 
+if [ $# -eq 2 ] && ! [[ $2 =~ ^[0-9]+$ ]] 
 then 
-	find -L $DIR -type l 
+	echo "If there is a second argument, it should be a number"
+	exit 3 
+fi 
+
+DIR=$1
+
+if [ $# -eq 2 ] 
+then  
+	while read file hardlinks && [ $hardlinks -ge $2 ] 
+	do
+		echo "$file : $hardlinks"
+	done< <(find $DIR -type f -printf "%f %n\n" 2>/dev/null | sort -t " " -k 2,2 -nr | cut -d " " -f 1,2)
 else
-  #we assume that the second parameter is always a number 
-	find $DIR -type f -printf "%p %n\n" | egrep -w $2 | cut -d " " -f1 
+	find -L $DIR -type l  
 fi 
