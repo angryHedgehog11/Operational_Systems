@@ -1,34 +1,26 @@
-#!/bin/bash 
+#!/bin/bash
 
-if [ $# -ne 1 ] 
+if [ $# -gt 1 ] 
 then 
-	echo "Wrong number of arguments"
-	exit 1
+	echo "This script should take only one argument"
+	exit 1 
 fi 
 
 if ! [ -d $1 ]
 then 
-	echo "Argument should be existing dir"
+	echo "The first argument should be an existing dir"
 	exit 2
 fi 
 
-
 DIR=$1
+FRIENDS=$(mktemp) 
 
-files=$(mktemp)
-communication=$(mktemp)
+while read friend
+do
+	TOTALROWS=$(find $DIR -type f | egrep -w $friend | egrep -w [0-2][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]-[0-6][0-9]-[0-6][0-9]-[0-6][0-9].txt | xargs wc -l | tail -n 1 | rev | cut -d " " -f2 | rev)
+	echo "$friend : $TOTALROWS" >> $FRIENDS 
+done< <(find $DIR -mindepth 3 -maxdepth 3 -type d | cut -d "/" -f 4 | sort | uniq) 
 
-find $DIR -type f -name "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9].txt"  > $files 
- 
-cat $FILE | egrep fr1 | xargs wc -l | tail -n 1 | tr -s " " | cut -d ' ' -f2   
+cat $FRIENDS | sort -nr -t ":" -k2,2 | head -n 10 
 
-while read fiend 
-do 
-	ROWS=$(cat $files | egrep $friend | xargs wc -l | tail -n 1 | tr -s " " | cut -d ' ' -f2)
-  echo "$ROWS $firend" >> communication
-done< <(cat $files | cut -d '/' -f 4 | sort | uniq)
-
-cat communication | sort -nr | head -n 10 
-
-rm $files 
-rm $communication 
+rm -rf $FRIENDS
